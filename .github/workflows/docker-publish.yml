@@ -1,4 +1,4 @@
-name: Crear y publicar imagen Docker
+name: Crear imagen y desplegar aplicación
 
 on:
   push:
@@ -31,3 +31,21 @@ jobs:
           tags: |
             enderchamo/hola-mundo-devops:latest
             enderchamo/hola-mundo-devops:${{ github.sha }}
+
+  deploy:
+    needs: docker
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Desplegar imagen en Render
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+          RENDER_SERVICE_ID: ${{ secrets.RENDER_SERVICE_ID }}
+          IMAGE_URL: docker.io/enderchamo/hola-mundo-devops:${{ github.sha }}
+        run: |
+          curl --fail-with-body --request POST \
+            --url "https://api.render.com/v1/services/${RENDER_SERVICE_ID}/deploys" \
+            --header "Accept: application/json" \
+            --header "Authorization: Bearer ${RENDER_API_KEY}" \
+            --header "Content-Type: application/json" \
+            --data "{\"imageUrl\":\"${IMAGE_URL}\"}"
